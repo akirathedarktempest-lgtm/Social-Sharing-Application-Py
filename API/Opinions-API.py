@@ -2,24 +2,28 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import sqlite3
 
-app=FastAPI()
-
-def Emails():
+def lookForsignup(email:str):
     connect=sqlite3.connect("signup.db")
     cursor=connect.cursor()
-    cursor.execute("SELECT * FROM signup")
+    cursor.execute("""CREATE TABLE IF NOT EXISTS sign_up(
+                      email text,
+                      password text,
+                      username text,
+                      name text)""")
+    cursor.execute("SELECT * FROM sign_up")
     info=cursor.fetchall()
-    l=[]
     for i in info:
-        l.append(i[0])
-    return l
+        if i[0]==email:
+            return True
+        else:
+            pass
+    return False
 
-@app.get("/api/signup/get/{email}")
-def dataEmails(email:str):
-    data=Emails()
-    if email in data:
-        return {"Already":"In The Database"}
-    else:
-        return {"Can":"Be Added"}
+app=FastAPI()
 
-#we will build this slowly slowly, and i could think of this only for now
+@app.get("/get/bool/{email}")
+def get_email_bool(email:str):
+    statement=lookForsignup(email)
+    return {"Result":f"{statement}"}
+
+#soon...it will be completed soon
