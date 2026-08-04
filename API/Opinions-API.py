@@ -37,6 +37,12 @@ def postingEmail(email,password,username,name):
     except Exception as e:
         return e
 
+def returnCode():
+    code=""
+    for _ in range(6):
+        code+=random.choice("0123456789")
+    return code
+
 app=FastAPI()
 
 class SigningUp(BaseModel):
@@ -69,5 +75,41 @@ def tokenAccess(email:str):
         return {"You can't access":"Refuses"}
     else:
         return {"TOKEN":token}
+
+@app.get("/get/code/{email}")
+def confirmationCode(email:str):
+    global dictionary
+    information=lookForsignup(email)
+    if information is True:
+        return {"You are...":"...already there"}
+    else:
+        code=returnCode()
+        dictionary[email]=code
+        sender = "EMAIL"
+        password = "APP PASSWORD"
+        reciever=email
+        message=EmailMessage()
+        message["From"]=sender
+        message["To"]=reciever
+        message["Subject"]="Your verification code"
+        message.set_content(f"""
+Your verification code: {code}
+
+If you didn't request this, you can safely ignore this""")
+        server=smtplib.SMTP_SSL("smtp.gmail.com",465)
+        server.login(sender,password)
+        server.send_message(message)
+        return {"It's out!":"The email is send!"}
+
+@app.get("/check/confirmation/{email}/{code}")
+def confirm(email:str,code:str):
+    global dictionary
+    if email in dictionary:
+        if code==dictionary[email]:
+            return {"Confirmed":True}
+        else:
+            return {"Wrong":False}
+    else:
+        return {"Not present":"No email code went!"}
 
 #soon...it will be completed soon
