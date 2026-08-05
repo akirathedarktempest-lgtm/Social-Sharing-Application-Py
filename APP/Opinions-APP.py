@@ -98,6 +98,49 @@ def ConfirmationCode(root:Tk,email:str,password:str,username:str,name:str,entry:
         label.pack()
     return
 
+def LogInPage(root:Tk):
+    new_window=Tk()
+    root.destroy()
+    root=new_window
+    emailLabel=Label(root,text="Email")
+    emailEntry=Entry(root)
+    passwordLabel=Label(root,text="Password")
+    passwordEntry=Entry(root)
+    loginButton=Button(root,text="Log In!",command=lambda:LogIn(str(emailEntry.get()),str(passwordEntry.get()),root))
+    emailLabel.pack()
+    emailEntry.pack()
+    passwordLabel.pack()
+    passwordEntry.pack()
+    loginButton.pack()
+
+def LogIn(emailEntry:str,passwordEntry:str,root:Tk):
+    information={"email":emailEntry,"password":passwordEntry}
+    response=requests.post("http://127.0.0.1:8000/check/email/password",json=information)
+    data=response.content
+    data=data.decode("utf-8")
+    data=json.loads(data)
+    if data["Result"] is False:
+        new_window=Tk()
+        root.destroy()
+        root=new_window
+        labelWrong=Label(root,text="Invalid email or password")
+        labelWrong.pack()
+        return
+    elif data["Result"] is True:
+        new_window=Tk()
+        root.destroy()
+        root=new_window
+        labelRight=Label(root,text="Weicome back!")
+        labelRight.pack()
+    else:
+        print("Something's wrong!")
+
+login_page=Button(root,text="Log In",command=lambda:LogInPage(root))
+login_page.pack()
+
+label=Label(root,text="or")
+label.pack()
+
 signup_page=Button(root,text="Sign Up",command=SignUpPage)
 signup_page.pack()
 
