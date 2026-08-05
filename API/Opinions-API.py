@@ -112,4 +112,31 @@ def confirm(email:str,code:str):
     else:
         return {"Not present":"No email code went!"}
 
+class LoggingIn(BaseModel):
+    email:str
+    password:str
+
+def EmailPasswords(email:str,password:str):
+    connect=sqlite3.connect("signup.db")
+    cursor=connect.cursor()
+    cursor.execute("""CREATE TABLE IF NOT EXISTS sign_up(
+                      email text,
+                      password text,
+                      username text,
+                      name text)""")
+    cursor.execute("SELECT * FROM sign_up")
+    info=cursor.fetchall()
+    for i in info:
+        if i[0]==email:
+            if i[1]==password:
+                return True
+            else:
+                return False
+    return False
+
+@app.post("/check/email/password")
+def logging(user:LoggingIn):
+    information=EmailPasswords(user.email,user.password)
+    return {"Result":information}
+
 #soon...it will be completed soon
