@@ -2,8 +2,14 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import sqlite3
 import tokenGenerator
+import smtplib
+import random
+from email.message import EmailMessage
+import bcrypt
 
 token=tokenGenerator.generate()
+
+dictionary={}
 
 def lookForsignup(email:str):
     connect=sqlite3.connect("signup.db")
@@ -43,6 +49,11 @@ def returnCode():
         code+=random.choice("0123456789")
     return code
 
+def hashCode(password:str):
+    password=password.encode("utf-8")
+    salt=bcrypt.gensalt()
+    return bcrypt.hashpw(password,salt)
+
 app=FastAPI()
 
 class SigningUp(BaseModel):
@@ -61,7 +72,9 @@ def get_email_bool(email:str):
 def post_email(data:SigningUp):
     global token
     if token==data.TOKEN:
-        information=postingEmail(data.email,data.password,data.username,data.name)
+        password=hashCode(data.password)
+        password=password.decode("utf-8")
+        information=postingEmail(data.email,password,data.username,data.name)
         token=token.replace(token,tokenGenerator.generate())
         return {"Result":information}
     else:
@@ -86,7 +99,7 @@ def confirmationCode(email:str):
         code=returnCode()
         dictionary[email]=code
         sender = "EMAIL"
-        password = "APP PASSWORD"
+        password = "APP_ PASS WORD"
         reciever=email
         message=EmailMessage()
         message["From"]=sender
@@ -128,15 +141,59 @@ def EmailPasswords(email:str,password:str):
     info=cursor.fetchall()
     for i in info:
         if i[0]==email:
-            if i[1]==password:
+            verify=verifyPassword(password,i[1].encode("utf-8"))
+            if verify is True:
                 return True
             else:
                 return False
     return False
 
+def verifyPassword(password:str,hashPassword:bytes):
+    password=password.encode("utf-8")
+    return bcrypt.checkpw(password,hashPassword)
+
 @app.post("/check/email/password")
 def logging(user:LoggingIn):
     information=EmailPasswords(user.email,user.password)
     return {"Result":information}
+
+class CreateOpinion(BaseModel):
+    email:str
+    password:str
+    username:str
+    name:str
+    content:str
+    date:str
+
+def createPost(username:str,name:str,date:str,postid:int,content:str):
+    connect=sqlite3.connect("Opinions-DB.db")
+    cursor=connect.cursor()
+    cursor.execute("""CREATE TABLE IF NOT EXISTS opinions(
+                        content text,
+                        username text,
+                        name text,
+                        date str,
+                        postid int)""")
+    cursor.execute("INSERT INTO opinions VALUES (?,?,?,?,?)",[content,username,name,date,postid])
+    connect.commit()
+
+def length():
+    connect=sqlite3.connect("Opinions-DB.db")
+    cursor=connect.cursor()
+    cursor.execute("SELECT * FROM opinions")
+    info=cursor.fetchall()
+    n=0
+    for _ in info:
+        n+=1
+    return -(n+1)
+
+@app.post("/post/opinion")
+def postOpinion(user:CreateOpinion):
+    result=EmailPasswords(user.email,user.password)
+    if result is True:
+        createPost(user.username,user.name,user.date,length(),user.content)
+        return {"Result":True}
+    else:
+        return {"Failed":False}
 
 #soon...it will be completed soon
