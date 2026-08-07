@@ -3,8 +3,14 @@ import json
 import requests
 import validators
 import tokenGenerator
+from tkinter.scrolledtext import ScrolledText
 
 root=Tk()
+
+email_address__=""
+password__=""
+username__=""
+name__=""
 
 def SignUpPage():
     global root
@@ -77,11 +83,19 @@ def ConfirmationCode(root:Tk,email:str,password:str,username:str,name:str,entry:
     response=response.content
     response=response.decode("utf-8")
     response=json.loads(response)
+    global email_address__
+    global password__
+    global name__
+    global username__
     if "Confirmed" in response:
         TOKEN=requests.get(f"http://127.0.0.1:8000/get/token/{email}")
         TOKEN=TOKEN.content
         TOKEN=TOKEN.decode("utf-8")
         TOKEN=json.loads(TOKEN)
+        email_address__=email_address__.replace(email_address__,email)
+        password__=password__.replace(password__,password)
+        username__=username__.replace(username__,username)
+        name__=name__.replace(name__,name)
         new_window=Tk()
         root.destroy()
         root=new_window
@@ -90,6 +104,8 @@ def ConfirmationCode(root:Tk,email:str,password:str,username:str,name:str,entry:
         print(send_data.status_code)
         label=Label(root,text="Welcome!")
         label.pack()
+        button=Button(root,text="Wanna write something :)?",command=lambda:CreateOpinion(root))
+        button.pack()
     else:
         new_window=Tk()
         root.destroy()
@@ -114,6 +130,10 @@ def LogInPage(root:Tk):
     loginButton.pack()
 
 def LogIn(emailEntry:str,passwordEntry:str,root:Tk):
+    global email_address__
+    global password__
+    global username__
+    global name__
     information={"email":emailEntry,"password":passwordEntry}
     response=requests.post("http://127.0.0.1:8000/check/email/password",json=information)
     data=response.content
@@ -127,11 +147,21 @@ def LogIn(emailEntry:str,passwordEntry:str,root:Tk):
         labelWrong.pack()
         return
     elif data["Result"] is True:
+        data=requests.get(f"http://127.0.0.1:8000/username/name/{emailEntry}")
+        data=data.content
+        data=data.decode("utf-8")
+        data=json.loads(data)
+        email_address__=email_address__.replace(email_address__,emailEntry)
+        password__=password__.replace(password__,passwordEntry)
+        username__=username__.replace(username__,data["username"])
+        name__=name__.replace(name__,data["name"])
         new_window=Tk()
         root.destroy()
         root=new_window
         labelRight=Label(root,text="Weicome back!")
         labelRight.pack()
+        button=Button(root,text="Wanna write something :)?",command=lambda:CreateOpinion(root))
+        button.pack()
     else:
         print("Something's wrong!")
 
@@ -143,6 +173,49 @@ label.pack()
 
 signup_page=Button(root,text="Sign Up",command=SignUpPage)
 signup_page.pack()
+
+def CreateOpinion(root:Tk):
+    new_window=Tk()
+    root.destroy()
+    root=new_window
+    text=Text(root)
+    text.pack()
+    data=text.get("1.0","end")
+    button=Button(root,text="Post!",command=lambda:postContent(root,str(data)))
+    button.pack()
+
+def postContent(root:Tk,content:str):
+    global email_address__
+    global password__
+    global username__
+    global name__
+    new_window=Tk()
+    root.destroy()
+    root=new_window
+    if content=="":
+        label1=Label(root,text="The content had nothing :(")
+        label1.pack()
+        return
+    if " " in content and content.replace(" ","")=="":
+        label1=Label(root,text="This content has nothing :(")
+        label1.pack()
+        return
+    opinion={"email":email_address__,"password":password__,"username":username__,"name":name__,"content":content}
+    response=requests.post("http://127.0.0.1:8000/post/opinion",json=opinion)
+    data=response.content
+    data=data.decode("utf-8")
+    data=json.loads(data)
+    if "Result" in data:
+        rightLabel=Label(root,text="Sent successfully :)!")
+        rightLabel.pack()
+        return
+    elif "Failed" in data:
+        wrongLabel=Label(root,text=f"Failed :(\nYour content: {content}")
+        wrongLabel.pack()
+        return
+    else:
+        print("Something's wrong here, line 200...bro")
+        return
 
 root.mainloop()
 #we will be growing here as well soon! although this is not enough for now
