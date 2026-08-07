@@ -163,7 +163,6 @@ class CreateOpinion(BaseModel):
     username:str
     name:str
     content:str
-    date:str
 
 def createPost(username:str,name:str,date:str,postid:int,content:str):
     connect=sqlite3.connect("Opinions-DB.db")
@@ -180,20 +179,36 @@ def createPost(username:str,name:str,date:str,postid:int,content:str):
 def length():
     connect=sqlite3.connect("Opinions-DB.db")
     cursor=connect.cursor()
+    cursor.execute("""CREATE TABLE IF NOT EXISTS opinions(
+                            content text,
+                            username text,
+                            name text,
+                            date str,
+                            postid int)""")
     cursor.execute("SELECT * FROM opinions")
     info=cursor.fetchall()
-    n=0
-    for _ in info:
-        n+=1
+    n=len(info)
     return -(n+1)
 
 @app.post("/post/opinion")
 def postOpinion(user:CreateOpinion):
     result=EmailPasswords(user.email,user.password)
     if result is True:
-        createPost(user.username,user.name,user.date,length(),user.content)
+        time=f"\"{datetime.now()}\" GMT +05:30"
+        createPost(user.username,user.name,time,length(),user.content)
         return {"Result":True}
     else:
         return {"Failed":False}
+
+def userName(email:str):
+    connect=sqlite3.connect("signup.db")
+    cursor=connect.cursor()
+    cursor.execute("SELECT * FROM sign_up WHERE email=?",[email])
+    data=cursor.fetchone()
+    return {"username":data[2],"name":data[3]}
+
+@app.get("/username/name/{email}")
+def getUsername(email:str):
+    return userName(email)
 
 #soon...it will be completed soon
