@@ -6,6 +6,7 @@ import smtplib
 import random
 from email.message import EmailMessage
 import bcrypt
+from datetime import datetime
 
 token=tokenGenerator.generate()
 
@@ -98,7 +99,7 @@ def confirmationCode(email:str):
     else:
         code=returnCode()
         dictionary[email]=code
-        sender = "EMAIL"
+        sender = "YOUREMAIL"
         password = "APP_ PASS WORD"
         reciever=email
         message=EmailMessage()
@@ -211,4 +212,41 @@ def userName(email:str):
 def getUsername(email:str):
     return userName(email)
 
-#soon...it will be completed soon
+def content(number:int):
+    connect=sqlite3.connect("Opinions-DB.db")
+    cursor=connect.cursor()
+    cursor.execute("""CREATE TABLE IF NOT EXISTS opinions(
+                                content text,
+                                username text,
+                                name text,
+                                date str,
+                                postid int)""")
+    cursor.execute("SELECT * FROM opinions WHERE postid=?",[number])
+    info=cursor.fetchone()
+    return {"content":info[0],"name":info[2],"username":info[1],"date":info[3],"state":True}
+
+def lengthOf():
+    connect=sqlite3.connect("Opinions-DB.db")
+    cursor=connect.cursor()
+    cursor.execute("""CREATE TABLE IF NOT EXISTS opinions(
+                                    content text,
+                                    username text,
+                                    name text,
+                                    date str,
+                                    postid int)""")
+    cursor.execute("SELECT * FROM opinions")
+    info=cursor.fetchall()
+    return len(info)
+
+@app.get("/find/content/number/{number}")
+def getContent(number:int):
+    if number>lengthOf():
+        return {"Result":{"state":False}}
+    number=-number
+    return {"Result":content(number)}
+
+@app.get("/length/content")
+def lengthContent():
+    return {"Number":lengthOf()}
+
+#completed!!!!!! API work done!
