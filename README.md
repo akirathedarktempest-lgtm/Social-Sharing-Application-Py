@@ -7,4 +7,4 @@ Definitely no lol, this uses Tkinter and wouldn't give you a good UI/UX (i am no
 # Contributors
 Akari, my bestie, my love, and me
 # And...
-Thank you for visiting ad looking at it :D
+Thank you for visiting and looking at it :D
