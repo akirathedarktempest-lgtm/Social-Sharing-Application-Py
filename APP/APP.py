@@ -3,7 +3,6 @@ import json
 import requests
 import validators
 import tokenGenerator
-from tkinter.scrolledtext import ScrolledText
 
 root=Tk()
 
@@ -147,6 +146,7 @@ def LogIn(emailEntry:str,passwordEntry:str,root:Tk):
         labelWrong.pack()
         return
     elif data["Result"] is True:
+        global number
         data=requests.get(f"http://127.0.0.1:8000/username/name/{emailEntry}")
         data=data.content
         data=data.decode("utf-8")
@@ -158,10 +158,12 @@ def LogIn(emailEntry:str,passwordEntry:str,root:Tk):
         new_window=Tk()
         root.destroy()
         root=new_window
-        labelRight=Label(root,text="Weicome back!")
-        labelRight.pack()
-        button=Button(root,text="Wanna write something :)?",command=lambda:CreateOpinion(root))
-        button.pack()
+        label=Label(root,text="Welcome back!")
+        label.pack()
+        post_button=Button(root,text="Wanna write something :)?",command=lambda:CreateOpinion(root))
+        post_button.pack()
+        watch=Button(root,text="See content!",command=lambda:show(root,length()))
+        watch.pack()
     else:
         print("Something's wrong!")
 
@@ -179,10 +181,9 @@ def CreateOpinion(root:Tk):
     root.destroy()
     root=new_window
     text=Text(root)
-    text.pack()
-    data=text.get("1.0","end")
-    button=Button(root,text="Post!",command=lambda:postContent(root,str(data)))
+    button=Button(root,text="Post!",command=lambda:postContent(root,str(text.get("1.0","end-1c"))))
     button.pack()
+    text.pack()
 
 def postContent(root:Tk,content:str):
     global email_address__
@@ -217,5 +218,79 @@ def postContent(root:Tk,content:str):
         print("Something's wrong here, line 200...bro")
         return
 
+def length():
+    response=requests.get("http://127.0.0.1:8000/length/content")
+    response=response.content
+    response=response.decode("utf-8")
+    response=json.loads(response)
+    return response["Number"]
+
+def show(root:Tk,number):
+    try:
+        number=int(number)
+    except Exception as e:
+        print("Error of numbers :(")
+    if type(number) is not int:
+        wrong=Tk()
+        root.destroy()
+        root=wrong
+        label=Label(root,text=f"You can only give integer number :(\nThere's only content of from 1 to {length()}")
+        label.pack()
+        entry=Entry(root)
+        button=Button(root,text="Find",command=lambda:show(root,entry.get()))
+        entry.pack()
+        button.pack()
+        return
+    number=int(number)
+    if number>length():
+        wrong=Tk()
+        root.destroy()
+        root=wrong
+        label=Label(root,text=f"There's not so much of data there there :(\nThere's only content of from 1 to {length()}")
+        label.pack()
+        entry=Entry(root)
+        button=Button(root,text="Find",command=lambda:show(root,entry.get()))
+        entry.pack()
+        button.pack()
+        return
+    if number<=0:
+        wrong=Tk()
+        root.destroy()
+        root=wrong
+        label=Label(root,text=f"There's not so much of data there there :(\nThere's only content of from 1 to {length()}")
+        label.pack()
+        entry=Entry(root)
+        button=Button(root,text="Find",command=lambda:show(root,entry.get()))
+        entry.pack()
+        button.pack()
+        return
+    right=Tk()
+    root.destroy()
+    root=right
+    response=requests.get(f"http://127.0.0.1:8000/find/content/number/{number}")
+    response=response.content
+    response=response.decode("utf-8")
+    response=json.loads(response)
+    if response["Result"]["state"] is False:
+        label=Label(root,text=f"There's something wrong :(\nThere's only content of from 1 to {length()}")
+        label.pack()
+        entry=Entry(root)
+        button=Button(root,text="Find",command=lambda:show(root,entry.get()))
+        entry.pack()
+        button.pack()
+        return
+    elif response["Result"]["state"] is True:
+        response=response["Result"]
+        labelFrame=Label(root,text=f"{response["name"]}\n{response["username"]}\n{response["date"]}")
+        contentFrame=Label(root,text=f"\n{response["content"]}")
+        entry=Entry(root)
+        button=Button(root,text="Find",command=lambda:show(root,entry.get()))
+        labelFrame.pack()
+        contentFrame.pack()
+        entry.pack()
+        button.pack()
+        return
+    else:
+        print("still something's wrong there :(")
+
 root.mainloop()
-#we will be growing here as well soon! although this is not enough for now
